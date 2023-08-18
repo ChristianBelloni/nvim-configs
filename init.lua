@@ -12,6 +12,8 @@ end
 
 vim.call('plug#begin', '~/.config/nvim/plugged')
 
+Plug('rcarriga/nvim-dap-ui')
+Plug('iamcco/markdown-preview.nvim')
 Plug('Ciel-MC/rust-tools.nvim')
 Plug('junegunn/fzf', {['do'] = vim.fn['fzf#install']})
 Plug('dag/vim-fish')
@@ -21,10 +23,12 @@ Plug('nvim-tree/nvim-tree.lua')
 Plug('nvim-tree/nvim-web-devicons')
 Plug ('RRethy/nvim-base16')
 Plug('neovim/nvim-lspconfig')
+Plug('mfussenegger/nvim-dap')
 
 Plug('nvim-lua/plenary.nvim')
 Plug('saecki/crates.nvim')
 Plug("rust-lang/rust.vim")
+
 
 Plug('hrsh7th/nvim-cmp')
 Plug('hrsh7th/cmp-nvim-lsp')
@@ -36,31 +40,48 @@ Plug('hrsh7th/cmp-buffer')
 Plug('hrsh7th/vim-vsnip')
 Plug('puremourning/vimspector')
 Plug('voldikss/vim-floaterm')
-
+Plug('akinsho/toggleterm.nvim', {tag = '*'})
 
 vim.call('plug#end')
 
+require("toggleterm").setup()
 local rt = require("rust-tools")
 
+local extension_path = vim.env.HOME
+  .. "/.vscode/extensions/vadimcn.vscode-lldb-1.9.0/"
+local codelldb_path = extension_path .. "adapter/codelldb"
+local liblldb_path = extension_path .. "lldb/lib/liblldb.dylib"
+
+
 rt.setup({
+    executor = require("rust-tools.executors").toggleterm,
     server = {
     on_attach = function(_, bufnr)
       vim.keymap.set("n", "<C-space>", rt.hover_actions.hover_actions, { buffer = bufnr })
       vim.keymap.set("n", "<C-o>", rt.code_action_group.code_action_group, { buffer = bufnr })
     end,
+    standalone = true,
+  },
+    dap = {
+        adapter = require("rust-tools.dap").get_codelldb_adapter(
+            codelldb_path,
+            liblldb_path
+        ),
   },
 })
-
+local dap = require("dap")
+dap.defaults.fallback.terminal_win_cmd = "50vsplit new"
 require('rust-tools').inlay_hints.enable()
 require('rust-tools').inlay_hints.set()
 require'rust-tools'.hover_actions.hover_actions()
 require'rust-tools'.hover_range.hover_range()
+require('rust-tools').runnables.runnables()
 require("nvim-tree").setup({
     on_attach = "open",
     view = {
         side = "left",
         width = 30,
-        relativenumber = true
+        relativenumber = true,
     },
     actions = {
         open_file = {
@@ -76,7 +97,7 @@ map("n", "<C-p>", ":GFiles<cr>")
 map("n", "<C-o>", ":Buffers<cr>")
 map("n", "<C-r>", ":Rg<cr>")
 
-vim.cmd("let g:fzf_layout = { 'down':  '30%'}")
+vim.cmd("let g:fzf_layout = { 'down':  '40%'}")
 
 -- LSP Diagnostics Options Setup 
 local sign = function(opts)
@@ -198,10 +219,8 @@ nmap <C-e> <cmd>call vimspector#Launch()<cr>
 nmap <F5> <cmd>call vimspector#StepOver()<cr>
 nmap <F8> <cmd>call vimspector#Reset()<cr>
 nmap <F11> <cmd>call vimspector#StepOver()<cr>")
-nmap <F12> <cmd>call vimspector#StepOut()<cr>")
 nmap <F10> <cmd>call vimspector#StepInto()<cr>")
 ]])
-map('n', "Db", ":call vimspector#ToggleBreakpoint()<cr>")
 map('n', "Dw", ":call vimspector#AddWatch()<cr>")
 map('n', "De", ":call vimspector#Evaluate()<cr>")
 
@@ -217,6 +236,86 @@ local opts = { noremap=true, silent=true }
 map('n', 'gD', '<Cmd>lua vim.lsp.buf.declaration()<CR>', opts)
 map('n', 'gd', '<Cmd>lua vim.lsp.buf.definition()<CR>', opts)
 map('n', 'gr', '<cmd>lua vim.lsp.buf.references()<CR>', opts)
+map('n', '<F12>', '<cmd>lua vim.lsp.buf.rename()<CR>', opts)
+vim.cmd("nnoremap <leader><leader> <c-^>")
 
 vim.wo.relativenumber = true
 require'nvim-tree.view'.View.winopts.relativenumber = true
+
+vim.cmd("autocmd VimEnter,WinEnter * let &scrolloff = winheight(0) / 5 * 2")
+vim.cmd(":set number relativenumber")
+vim.cmd(":set nu rnu")
+
+map('n', "Db", "<Cmd>lua require'dap'.toggle_breakpoint()<CR>", opts)
+
+require("dapui").setup({
+  icons = { expanded = "▾", collapsed = "▸" },
+
+  lspconfig = {
+    cmd = { "lua-language-server" },
+    on_attach = function(c, b)
+    end,
+    settings = {
+      Lua = {
+        hint = {
+          enable = true,
+        },
+      },
+    },
+  },
+  mappings = {
+    -- Use a table to apply multiple mappings
+    expand = { "<CR>", "<2-LeftMouse>" },
+    open = "o",
+    remove = "d",
+    edit = "e",
+    repl = "r",
+    toggle = "t",
+  },
+  -- Expand lines larger than the window
+  -- Requires >= 0.7
+  expand_lines = vim.fn.has("nvim-0.7"),
+  -- Layouts define sections of the screen to place windows.
+  -- The position can be "left", "right", "top" or "bottom".
+  -- The size specifies the height/width depending on position. It can be an Int
+  -- or a Float. Integer specifies height/width directly (i.e. 20 lines/columns) while
+  -- Float value specifies percentage (i.e. 0.3 - 30% of available lines/columns)
+  -- Elements are the elements shown in the layout (in order).
+  -- Layouts are opened in order so that earlier layouts take priority in window sizing.
+  layouts = {
+    {
+      elements = {
+        -- Elements can be strings or table with id and size keys.
+        {
+          id = "scopes",
+          size = 0.25,
+        },
+        "breakpoints",
+        "stacks",
+        "watches",
+      },
+      size = 40, -- 40 columns
+      position = "left",
+    },
+    {
+      elements = {
+        "repl",
+        "console",
+      },
+      size = 0.25, -- 25% of total lines
+      position = "bottom",
+    },
+  },
+  floating = {
+    max_height = nil, -- These can be integers or a float between 0 and 1.
+    max_width = nil, -- Floats will be treated as percentage of your screen.
+    border = "single", -- Border style. Can be "single", "double" or "rounded"
+    mappings = {
+      close = { "q", "<Esc>" },
+    },
+  },
+  windows = { indent = 1 },
+  render = {
+    max_type_length = nil, -- Can be integer or nil.
+  },
+})
