@@ -21,9 +21,11 @@ Plug('junegunn/fzf.vim')
 Plug('airblade/vim-rooter')
 Plug('nvim-tree/nvim-tree.lua')
 Plug('nvim-tree/nvim-web-devicons')
-Plug ('RRethy/nvim-base16')
+Plug('RRethy/nvim-base16')
 Plug('neovim/nvim-lspconfig')
 Plug('mfussenegger/nvim-dap')
+
+Plug('iamcco/markdown-preview.nvim', { ['do'] = vim.fn['mkdp#util#install']})
 
 Plug('nvim-lua/plenary.nvim')
 Plug('saecki/crates.nvim')
