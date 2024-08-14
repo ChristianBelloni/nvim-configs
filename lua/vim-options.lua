@@ -6,6 +6,6 @@ vim.g.mapleader = " "
 vim.cmd("set relativenumber")
 vim.cmd("set nu rnu")
 
-local autocmd_group = vim.api.nvim_create_augroup("Custom auto-commands", { clear = true })
+
 
 vim.keymap.set('n', '<leader><leader>', '<c-^>')

@@ -14,5 +14,10 @@ vim.opt.rtp:prepend(lazypath)
 require("vim-options")
 require("lazy").setup("plugins")
 
+vim.lsp.inlay_hint.enable(true)
 
 vim.cmd.Neotree("filesystem")
+vim.diagnostic.enable(1)
+
+vim.diagnostic.config({ virtual_text = true })
+

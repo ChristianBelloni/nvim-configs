@@ -1,7 +1,7 @@
 return {
     {
         'mrcjkb/rustaceanvim',
-        version = '^4', -- Recommended
+        version = '^5', -- Recommended
         ft = { 'rust' },
         config = function()
             vim.g.rustaceanvim = {
@@ -16,12 +16,30 @@ return {
                     default_settings = {
                         -- rust-analyzer language server configuration
                         ['rust-analyzer'] = {
+                            cargo = {
+                                buildScripts = {
+                                    enable = true,
+                                },
+                                allTargets = true,
+                                allFeatures = true
+                            },
+                            procMacro = {
+                                enable = true
+                            },
+                            add_return_type = {
+                                enable = true
+                            },
+                            diagnostics = {
+                                disabled = {'inactive-code'},
+                            },
+                            inlayHints = {
+                                enable = true,
+                                showParameterNames = true,
+                                parameterHintsPrefix = "<- ",
+                                otherHintsPrefix = "=> ",
+                            },
                         },
                     },
-                },
-                -- DAP configuration
-                dap = {
-autoload_configurations = true
                 },
             }
         end
@@ -29,13 +47,5 @@ autoload_configurations = true
     {
         'saecki/crates.nvim',
         tag = 'stable',
-        config = function()
-            require("crates").setup {
-                null_ls = {
-                    enabled = true,
-                    name = "crates.nvim",
-                },
-            }
-        end,
     }
 }
